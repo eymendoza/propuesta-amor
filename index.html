@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Para ti 🌻</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Georgia, "Times New Roman", serif;
+    background: #07130d;
+  }
+
+  body {
+    position: relative;
+    color: white;
+  }
+
+  canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 45%, transparent 20%, rgba(0,0,0,.18) 75%, rgba(0,0,0,.65) 100%),
+      linear-gradient(to bottom, rgba(2,10,7,.25), rgba(2,10,7,.45));
+  }
+
+  .content {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 24px;
+    pointer-events: none;
+  }
+
+  .message {
+    width: min(92vw, 720px);
+    opacity: 0;
+    transform: translateY(18px) scale(.98);
+    transition: opacity 1.8s ease, transform 1.8s ease;
+    text-shadow: 0 3px 18px rgba(0,0,0,.8);
+  }
+
+  .message.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .small {
+    font-family: Arial, sans-serif;
+    font-size: clamp(15px, 2.8vw, 20px);
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    opacity: .92;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(36px, 8vw, 76px);
+    line-height: 1.04;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 22px auto 0;
+    max-width: 600px;
+    font-family: Arial, sans-serif;
+    font-size: clamp(16px, 3.2vw, 21px);
+    line-height: 1.65;
+  }
+
+  .question {
+    font-size: clamp(35px, 8vw, 72px);
+    color: #ffd83d;
+  }
+
+  .buttons {
+    margin-top: 30px;
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    pointer-events: auto;
+  }
+
+  button {
+    border: 0;
+    border-radius: 999px;
+    padding: 15px 28px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+
+  #yes {
+    background: #ffd83d;
+    color: #26300c;
+    box-shadow: 0 0 25px rgba(255,216,61,.35);
+  }
+
+  #yes:hover { transform: scale(1.06); box-shadow: 0 0 35px rgba(255,216,61,.55); }
+
+  #think {
+    background: rgba(255,255,255,.12);
+    color: white;
+    border: 1px solid rgba(255,255,255,.55);
+    backdrop-filter: blur(8px);
+  }
+
+  #think:hover { transform: scale(1.03); }
+
+  .music {
+    position: fixed;
+    right: 16px;
+    top: 16px;
+    z-index: 5;
+    background: rgba(0,0,0,.28);
+    color: white;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 19px;
+    padding: 0;
+    display: none;
+  }
+
+  .heart {
+    position: fixed;
+    pointer-events: none;
+    font-size: 22px;
+    animation: floatUp 2.4s ease-out forwards;
+    z-index: 10;
+  }
+
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(.7) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(-180px) scale(1.4) rotate(20deg); }
+  }
+
+  .final {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 25px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.3s ease;
+    z-index: 20;
+    background: rgba(4, 18, 11, .38);
+    backdrop-filter: blur(2px);
+  }
+
+  .final.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .final-card {
+    width: min(90vw, 650px);
+    padding: 42px 28px;
+    border-radius: 30px;
+    background: rgba(8, 29, 18, .72);
+    border: 1px solid rgba(255,216,61,.45);
+    box-shadow: 0 20px 80px rgba(0,0,0,.45), 0 0 45px rgba(255,216,61,.12);
+    text-align: center;
+  }
+
+  .final-card h2 {
+    margin: 0;
+    color: #ffd83d;
+    font-size: clamp(35px, 8vw, 65px);
+  }
+
+  .final-card p {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 500px) {
+    .buttons button { width: min(80vw, 280px); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="garden"></canvas>
+<div class="vignette"></div>
+
+<button class="music" id="musicBtn" aria-label="Música">♫</button>
+
+<div class="content">
+  <div class="message" id="message"></div>
+</div>
+
+<div class="final" id="final">
+  <div class="final-card">
+    <div style="font-size:48px;margin-bottom:12px;">🌻❤️🌻</div>
+    <h2>Entonces… sí. ❤️</h2>
+    <p>
+      Gracias por decir ser mi reina.<br><br>
+      Espero que este sea apenas el comienzo de muchos momentos
+      bonitos juntos.
+      <br><br>
+      <strong>Feliz cumpleaños, mi amor. 🌻</strong>
+    </p>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("garden");
+const ctx = canvas.getContext("2d");
+const message = document.getElementById("message");
+const finalScreen = document.getElementById("final");
+
+let W, H, flowers = [], grass = [], particles = [];
+let startTime = performance.now();
+let phase = 0;
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  createGarden();
+}
+
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function createGarden() {
+  flowers = [];
+  grass = [];
+
+  const count = Math.max(14, Math.min(30, Math.floor(W / 38)));
+
+  for (let i = 0; i < count; i++) {
+    const x = (i + .5) * (W / count) + rand(-18, 18);
+    const y = H - rand(35, 110);
+    flowers.push({
+      x,
+      baseY: y,
+      height: rand(H * .16, H * .38),
+      size: rand(18, 30),
+      delay: i * 100 + rand(0, 500),
+      sway: rand(0, Math.PI * 2),
+      speed: rand(.0007, .0015),
+      grown: 0
+    });
+  }
+
+  for (let i = 0; i < Math.floor(W / 7); i++) {
+    grass.push({
+      x: i * 7 + rand(-3,3),
+      h: rand(10, 30),
+      lean: rand(-9,9)
+    });
+  }
+}
+
+function drawBackground(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#081b17");
+  g.addColorStop(.55, "#173b25");
+  g.addColorStop(1, "#07160e");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const glow = ctx.createRadialGradient(W*.5, H*.38, 20, W*.5, H*.38, H*.7);
+  glow.addColorStop(0, "rgba(255,190,55,.18)");
+  glow.addColorStop(1, "rgba(255,190,55,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawGrass() {
+  ctx.lineWidth = 1.2;
+  for (const g of grass) {
+    ctx.beginPath();
+    ctx.moveTo(g.x, H);
+    ctx.lineTo(g.x + g.lean, H - g.h);
+    ctx.strokeStyle = "rgba(65,150,75,.65)";
+    ctx.stroke();
+  }
+
+  const ground = ctx.createLinearGradient(0, H-100, 0, H);
+  ground.addColorStop(0, "rgba(20,75,36,0)");
+  ground.addColorStop(1, "rgba(2,15,8,.85)");
+  ctx.fillStyle = ground;
+  ctx.fillRect(0, H-110, W, 110);
+}
+
+function drawFlower(f, now) {
+  const elapsed = now - startTime - f.delay;
+  const grow = Math.max(0, Math.min(1, elapsed / 1500));
+  const eased = 1 - Math.pow(1 - grow, 3);
+
+  const sway = Math.sin(now * f.speed + f.sway) * 7 * eased;
+  const topX = f.x + sway;
+  const topY = f.baseY - f.height * eased;
+
+  // stem
+  ctx.beginPath();
+  ctx.moveTo(f.x, H);
+  ctx.quadraticCurveTo(f.x - sway*.3, f.baseY - f.height*.45, topX, topY);
+  ctx.strokeStyle = "#3d8e45";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // leaves
+  if (eased > .35) {
+    drawLeaf(f.x - 1, f.baseY - f.height*.35, -1, eased);
+    drawLeaf(f.x + 1, f.baseY - f.height*.58, 1, eased);
+  }
+
+  if (eased > .8) drawSunflower(topX, topY, f.size, eased);
+}
+
+function drawLeaf(x, y, dir, scale) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(dir * -.5);
+  ctx.scale(scale, scale);
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.quadraticCurveTo(dir*22,-12,dir*30,0);
+  ctx.quadraticCurveTo(dir*18,13,0,0);
+  ctx.fillStyle = "#4eaa51";
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawSunflower(x, y, size, scale) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  const petals = 18;
+
+  for (let i = 0; i < petals; i++) {
+    const a = (Math.PI * 2 / petals) * i;
+    ctx.save();
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.ellipse(0, -size*.72, size*.23, size*.62, 0, 0, Math.PI*2);
+    ctx.fillStyle = i % 2 ? "#ffd83d" : "#f6c928";
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const center = ctx.createRadialGradient(0,0,1,0,0,size*.42);
+  center.addColorStop(0, "#5b3510");
+  center.addColorStop(.65, "#6f4314");
+  center.addColorStop(1, "#3b250d");
+  ctx.beginPath();
+  ctx.arc(0,0,size*.4,0,Math.PI*2);
+  ctx.fillStyle = center;
+  ctx.fill();
+
+  // tiny center seeds
+  for(let i=0;i<18;i++){
+    const a = i * 2.399;
+    const r = (i/18) * size*.32;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*r, Math.sin(a)*r, 1.2, 0, Math.PI*2);
+    ctx.fillStyle = "#b77b25";
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function addParticles() {
+  if (Math.random() > .25) return;
+  particles.push({
+    x: rand(0,W),
+    y: H + 10,
+    vx: rand(-.25,.25),
+    vy: rand(-.8,-.25),
+    life: rand(80,170),
+    max: 170,
+    size: rand(1,3)
+  });
+}
+
+function drawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+
+    if (p.life <= 0) {
+      particles.splice(i,1);
+      continue;
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fillStyle = `rgba(255,220,100,${p.life/p.max*.5})`;
+    ctx.fill();
+  }
+}
+
+function setMessage(html) {
+  message.classList.remove("show");
+  setTimeout(() => {
+    message.innerHTML = html;
+    message.classList.add("show");
+  }, 500);
+}
+
+function runStory() {
+  setTimeout(() => {
+    setMessage(`
+      <div class="small">HAY ALGO MÁS PARA TI…</div>
+      <h1>🌻</h1>
+      <p>Y quería que lo descubrieras poco a poco.</p>
+    `);
+  }, 800);
+
+  setTimeout(() => {
+    setMessage(`
+      <div class="small">MIRA CON ATENCIÓN</div>
+      <p>
+        Porque preparé este pequeño jardín pensando en ti…
+        <br>
+        y en una pregunta que llevo un tiempo queriendo hacerte.
+      </p>
+    `);
+  }, 6500);
+
+  setTimeout(() => {
+    setMessage(`
+      <div class="small">Y AHORA…</div>
+      <h1>LA PREGUNTA ES LA SIGUIENTE❤️</h1>
+    `);
+  }, 11500);
+
+  setTimeout(() => {
+    setMessage(`
+      <div class="small">DESPUÉS DE TODO ESTE DETALLE…</div>
+      <h1 class="question">¿Quieres ser mi novia? 🌻</h1>
+      <div class="buttons">
+        <button id="yes">Sí❤️</button>
+        <button id="think">Necesito pensarlo 🥺</button>
+      </div>
+    `);
+
+    document.getElementById("yes").addEventListener("click", accept);
+    document.getElementById("think").addEventListener("click", think);
+  }, 17000);
+}
+
+function accept() {
+  message.classList.remove("show");
+  finalScreen.classList.add("show");
+
+  for(let i=0;i<35;i++) {
+    setTimeout(() => createHeart(), i*55);
+  }
+}
+
+function createHeart() {
+  const h = document.createElement("div");
+  h.className = "heart";
+  h.textContent = Math.random() > .35 ? "❤️" : "🌻";
+  h.style.left = rand(5,95) + "vw";
+  h.style.top = rand(55,90) + "vh";
+  document.body.appendChild(h);
+  setTimeout(() => h.remove(), 2500);
+}
+
+function think() {
+  setMessage(`
+    <div class="small">JAJAJA COMO QUE PENSAR</div>
+    <h1>TE VOY A SECUESTRAR</h1>
+    <p>
+    </p>
+  `);
+}
+
+function animate(now) {
+  drawBackground(now);
+  drawGrass();
+
+  for (const f of flowers) drawFlower(f, now);
+
+  addParticles();
+  drawParticles();
+
+  requestAnimationFrame(animate);
+}
+
+window.addEventListener("resize", resize);
+
+resize();
+runStory();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
